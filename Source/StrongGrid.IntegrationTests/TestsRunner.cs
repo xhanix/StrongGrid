@@ -20,8 +20,11 @@ namespace StrongGrid.IntegrationTests
 			Cancelled = 1223
 		}
 
-		public TestsRunner()
+		private readonly ILoggerFactory _loggerFactory;
+
+		public TestsRunner(ILoggerFactory loggerFactory)
 		{
+			_loggerFactory = loggerFactory;
 		}
 
 		public async Task<int> RunAsync()
@@ -33,8 +36,8 @@ namespace StrongGrid.IntegrationTests
 			// Logging options.
 			var options = new StrongGridClientOptions()
 			{
-				LogLevelFailedCalls = StrongGrid.Logging.LogLevel.Error,
-				LogLevelSuccessfulCalls = StrongGrid.Logging.LogLevel.Debug
+				LogLevelFailedCalls = LogLevel.Error,
+				LogLevelSuccessfulCalls = LogLevel.Debug
 			};
 			// -----------------------------------------------------------------------------
 

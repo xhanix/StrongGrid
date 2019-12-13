@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using Pathoschild.Http.Client;
 using Pathoschild.Http.Client.Extensibility;
-using StrongGrid.Logging;
 using StrongGrid.Resources;
 using StrongGrid.Utilities;
 using System;
@@ -21,6 +21,7 @@ namespace StrongGrid
 
 		private readonly bool _mustDisposeHttpClient;
 		private readonly StrongGridClientOptions _options;
+		private readonly ILoggerFactory _loggerFactory;
 
 		private HttpClient _httpClient;
 		private Pathoschild.Http.Client.IClient _fluentClient;
@@ -321,8 +322,8 @@ namespace StrongGrid
 		/// </summary>
 		/// <param name="apiKey">Your SendGrid API Key.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string apiKey, StrongGridClientOptions options = null)
-		: this(apiKey, null, null, null, false, options)
+		public Client(string apiKey, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+		: this(apiKey, null, null, null, false, options, loggerFactory)
 		{
 		}
 
@@ -332,8 +333,8 @@ namespace StrongGrid
 		/// <param name="apiKey">Your SendGrid API Key.</param>
 		/// <param name="proxy">Allows you to specify a proxy.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string apiKey, IWebProxy proxy, StrongGridClientOptions options = null)
-			: this(apiKey, new HttpClientHandler { Proxy = proxy, UseProxy = proxy != null }, options)
+		public Client(string apiKey, IWebProxy proxy, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(apiKey, new HttpClientHandler { Proxy = proxy, UseProxy = proxy != null }, options, loggerFactory)
 		{
 		}
 
@@ -343,8 +344,8 @@ namespace StrongGrid
 		/// <param name="apiKey">Your SendGrid API Key.</param>
 		/// <param name="handler">TThe HTTP handler stack to use for sending requests.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string apiKey, HttpMessageHandler handler, StrongGridClientOptions options = null)
-			: this(apiKey, null, null, new HttpClient(handler), true, options)
+		public Client(string apiKey, HttpMessageHandler handler, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(apiKey, null, null, new HttpClient(handler), true, options, loggerFactory)
 		{
 		}
 
@@ -354,8 +355,8 @@ namespace StrongGrid
 		/// <param name="apiKey">Your SendGrid API Key.</param>
 		/// <param name="httpClient">Allows you to inject your own HttpClient. This is useful, for example, to setup the HtppClient with a proxy.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string apiKey, HttpClient httpClient, StrongGridClientOptions options = null)
-			: this(apiKey, null, null, httpClient, false, options)
+		public Client(string apiKey, HttpClient httpClient, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(apiKey, null, null, httpClient, false, options, loggerFactory)
 		{
 		}
 
@@ -365,8 +366,8 @@ namespace StrongGrid
 		/// <param name="username">Your username.</param>
 		/// <param name="password">Your password.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string username, string password, StrongGridClientOptions options = null)
-			: this(null, username, password, null, false, options)
+		public Client(string username, string password, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(null, username, password, null, false, options, loggerFactory)
 		{
 		}
 
@@ -377,8 +378,8 @@ namespace StrongGrid
 		/// <param name="password">Your password.</param>
 		/// <param name="proxy">Allows you to specify a proxy.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string username, string password, IWebProxy proxy, StrongGridClientOptions options = null)
-			: this(username, password, new HttpClientHandler { Proxy = proxy, UseProxy = proxy != null }, options)
+		public Client(string username, string password, IWebProxy proxy, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(username, password, new HttpClientHandler { Proxy = proxy, UseProxy = proxy != null }, options, loggerFactory)
 		{
 		}
 
@@ -389,8 +390,8 @@ namespace StrongGrid
 		/// <param name="password">Your password.</param>
 		/// <param name="handler">TThe HTTP handler stack to use for sending requests.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string username, string password, HttpMessageHandler handler, StrongGridClientOptions options = null)
-			: this(null, username, password, new HttpClient(handler), true, options)
+		public Client(string username, string password, HttpMessageHandler handler, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(null, username, password, new HttpClient(handler), true, options, loggerFactory)
 		{
 		}
 
@@ -401,12 +402,12 @@ namespace StrongGrid
 		/// <param name="password">Your password.</param>
 		/// <param name="httpClient">Allows you to inject your own HttpClient. This is useful, for example, to setup the HtppClient with a proxy.</param>
 		/// <param name="options">Options for the SendGrid client.</param>
-		public Client(string username, string password, HttpClient httpClient, StrongGridClientOptions options = null)
-			: this(null, username, password, httpClient, false, options)
+		public Client(string username, string password, HttpClient httpClient, StrongGridClientOptions options = null, ILoggerFactory loggerFactory = null)
+			: this(null, username, password, httpClient, false, options, loggerFactory)
 		{
 		}
 
-		private Client(string apiKey, string username, string password, HttpClient httpClient, bool disposeClient, StrongGridClientOptions options)
+		private Client(string apiKey, string username, string password, HttpClient httpClient, bool disposeClient, StrongGridClientOptions options, ILoggerFactory loggerFactory = null)
 		{
 			_mustDisposeHttpClient = disposeClient;
 			_httpClient = httpClient;
@@ -420,7 +421,7 @@ namespace StrongGrid
 
 			// Order is important: DiagnosticHandler must be first.
 			// Also, the list of filters must be kept in sync with the filters in Utils.GetFluentClient in the unit testing project.
-			_fluentClient.Filters.Add(new DiagnosticHandler(_options.LogLevelSuccessfulCalls, _options.LogLevelFailedCalls));
+			_fluentClient.Filters.Add(new DiagnosticHandler(_options.LogLevelSuccessfulCalls, _options.LogLevelFailedCalls, loggerFactory.CreateLogger<DiagnosticHandler>()));
 			_fluentClient.Filters.Add(new SendGridErrorHandler());
 
 			if (!string.IsNullOrEmpty(apiKey)) _fluentClient.SetBearerAuthentication(apiKey);
