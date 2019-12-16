@@ -45,7 +45,7 @@ namespace StrongGrid.IntegrationTests
 			// Configure StrongGrid client
 			var apiKey = Environment.GetEnvironmentVariable("SENDGRID_APIKEY");
 			var proxy = useFiddler ? new WebProxy("http://localhost:8888") : null;
-			var client = new Client(apiKey, proxy, options);
+			var client = new Client(apiKey, proxy, options, _loggerFactory.CreateLogger<Client>());
 
 			// Configure Console
 			var source = new CancellationTokenSource();
