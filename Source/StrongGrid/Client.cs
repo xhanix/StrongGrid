@@ -420,6 +420,7 @@ namespace StrongGrid
 			_mustDisposeHttpClient = disposeClient;
 			_httpClient = httpClient;
 			_options = options ?? GetDefaultOptions();
+			_logger = logger;
 
 			_fluentClient = new FluentClient(new Uri(SENDGRID_V3_BASE_URI), httpClient)
 				.SetUserAgent(Client.UserAgent)
@@ -429,7 +430,7 @@ namespace StrongGrid
 
 			// Order is important: DiagnosticHandler must be first.
 			// Also, the list of filters must be kept in sync with the filters in Utils.GetFluentClient in the unit testing project.
-			_fluentClient.Filters.Add(new DiagnosticHandler(_options.LogLevelSuccessfulCalls, _options.LogLevelFailedCalls, logger));
+			_fluentClient.Filters.Add(new DiagnosticHandler(_options.LogLevelSuccessfulCalls, _options.LogLevelFailedCalls, _logger));
 			_fluentClient.Filters.Add(new SendGridErrorHandler());
 
 			if (!string.IsNullOrEmpty(apiKey)) _fluentClient.SetBearerAuthentication(apiKey);
